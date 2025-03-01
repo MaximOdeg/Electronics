@@ -1,28 +1,39 @@
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets
 from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import AllowAny
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.permissions import IsAdminUser
 
-from users.models import User
-from users.permissions import IsOwnerOrReadOnly
-from users.serializers import (UserProfileSerializer, UserSerializer,
-                               UserUpdateSerializer)
+from users.models import CustomUser
+from users.permissions import IsActiveEmployee
+from users.serializers import CustomUserSerializer
 
 
-class UserCreateAPIView(CreateAPIView):
-    """API view for registration"""
+class CustomUserViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserSerializer
+    permission_classes = [IsActiveEmployee]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active", "is_staff"]
 
-    serializer_class = UserSerializer
-    queryset = User.objects.all()
-    permission_classes = (AllowAny,)
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            self.permission_classes = [IsAdminUser]
+
+        return super().get_permissions()
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return CustomUser.objects.all()
+        return CustomUser.objects.filter(id=user.id)
 
 
-class UserProfileViewSet(ModelViewSet):
-    """User CRUD"""
+class CustomUserCreateAPIView(CreateAPIView):
+    serializer_class = CustomUserSerializer
+    queryset = CustomUser.objects.all()
+    permission_classes = [IsAdminUser]
 
-    queryset = User.objects.all()
-    permission_classes = [IsOwnerOrReadOnly]
-
-    def get_serializer_class(self):
-        if self.action in ("update", "partial_update"):
-            return UserUpdateSerializer
-        return UserProfileSerializer
+    def perform_create(self, serializer):
+        user = serializer.save(is_active=True)
+        user.set_password(user.password)
+        user.save()

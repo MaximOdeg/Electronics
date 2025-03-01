@@ -5,25 +5,21 @@ from rest_framework_simplejwt.views import (TokenObtainPairView,
                                             TokenRefreshView)
 
 from users.apps import UsersConfig
-from users.views import UserCreateAPIView, UserProfileViewSet
+from users.views import CustomUserCreateAPIView, CustomUserViewSet
 
 app_name = UsersConfig.name
 
 router = SimpleRouter()
-router.register("profiles", UserProfileViewSet)
+router.register("", CustomUserViewSet, basename="user")
 
 urlpatterns = [
-    path("register/", UserCreateAPIView.as_view(), name="register"),
+    path("api/register/", CustomUserCreateAPIView.as_view(), name="register"),
     path(
-        "login/",
+        "api/login/",
         TokenObtainPairView.as_view(permission_classes=(AllowAny,)),
         name="login",
     ),
-    path(
-        "login/refresh/",
-        TokenRefreshView.as_view(permission_classes=(AllowAny,)),
-        name="refresh",
-    ),
+    path("api/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ]
 
 urlpatterns += router.urls

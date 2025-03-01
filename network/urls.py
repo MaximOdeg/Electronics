@@ -1,12 +1,14 @@
 from django.urls import include, path
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import SimpleRouter
 
-from .views import NetworkNodeViewSet, SupplierViewSet
+from network.apps import NetworkConfig
+from network.views import NetworkNodeViewSet
 
-router = DefaultRouter()
-router.register(r"network-nodes", NetworkNodeViewSet)
-router.register(r"products", SupplierViewSet)
+app_name = NetworkConfig.name
+
+router = SimpleRouter()
+router.register(r"nodes", NetworkNodeViewSet, basename="nodes")
 
 urlpatterns = [
-    path("api/", include(router.urls)),
+    path("", include(router.urls)),
 ]
